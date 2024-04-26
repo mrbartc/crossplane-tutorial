@@ -60,51 +60,11 @@ kind create cluster
 # Crossplane #
 ##############
 
-echo "## Which Hyperscaler do you want to use?" | gum format
-
-HYPERSCALER=$(gum choose "google" "aws" "azure")
+HYPERSCALER="aws"
 
 echo "export HYPERSCALER=$HYPERSCALER" >> .env
 
-if [ "$HYPERSCALER" = "google" ]; then
-
-    gcloud auth login
-
-    PROJECT_ID=dot-$(date +%Y%m%d%H%M%S)
-
-    echo "export PROJECT_ID=$PROJECT_ID" >> .env
-
-    gcloud projects create ${PROJECT_ID}
-
-    echo "## Open https://console.cloud.google.com/billing/linkedaccount?project=$PROJECT_ID and link a billing account" \
-        | gum format
-
-    gum input --placeholder "Press the enter key to continue."
-
-    echo "## Open https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=$PROJECT_ID and *ENABLE* the API" \
-        | gum format
-
-    gum input --placeholder "Press the enter key to continue."
-
-    export SA_NAME=devops-toolkit
-
-    export SA="${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
-
-    gcloud iam service-accounts create $SA_NAME \
-        --project $PROJECT_ID
-
-    export ROLE=roles/admin
-
-    gcloud projects add-iam-policy-binding \
-        --role $ROLE $PROJECT_ID --member serviceAccount:$SA
-
-    gcloud iam service-accounts keys create gcp-creds.json \
-        --project $PROJECT_ID --iam-account $SA
-
-    yq --inplace ".spec.projectID = \"$PROJECT_ID\"" \
-        providers/google-config.yaml
-
-elif [ "$HYPERSCALER" = "aws" ]; then
+if [ "$HYPERSCALER" = "aws" ]; then
 
     AWS_ACCESS_KEY_ID=$(gum input \
         --placeholder "AWS Access Key ID" \
@@ -124,17 +84,5 @@ elif [ "$HYPERSCALER" = "aws" ]; then
 aws_access_key_id = $AWS_ACCESS_KEY_ID
 aws_secret_access_key = $AWS_SECRET_ACCESS_KEY
 " >aws-creds.conf
-
-else
-
-    AZURE_TENANT_ID=$(gum input --placeholder "Azure Tenant ID" --value "$AZURE_TENANT_ID")
-
-    az login --tenant $AZURE_TENANT_ID
-
-    export SUBSCRIPTION_ID=$(az account show --query id -o tsv)
-
-    az ad sp create-for-rbac --sdk-auth --role Owner \
-        --scopes /subscriptions/$SUBSCRIPTION_ID \
-        | tee azure-creds.json
 
 fi

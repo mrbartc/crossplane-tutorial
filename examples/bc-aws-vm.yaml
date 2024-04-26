@@ -1,0 +1,52 @@
+---
+# created wit a name tag
+# it got a public IP by default 
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: Instance
+metadata:
+  name: my-vm
+spec:
+  forProvider:
+    ami: ami-052efd3df9dad4825
+    region: us-east-1
+    instanceType: t2.nano
+    subnetIdRef:
+      name: my-subnet
+    tags:
+      Name: my-vm
+---
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: InstanceState
+metadata:
+  name: my-vm-instance-state
+spec:
+  forProvider:
+    region: us-east-1
+    instanceIdRef:
+      name: my-vm
+    state: running
+---
+# this was created as an unname VPC
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: VPC
+metadata:
+  name: my-vpc
+spec:
+  forProvider:
+    region: us-east-1
+    cidrBlock: 10.0.0.0/16
+    enableDnsSupport: true
+---
+# this was created as an unname Subnet
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: Subnet
+metadata:
+  name: my-subnet
+spec:
+  forProvider:
+    region: us-east-1
+    availabilityZone: us-east-1a
+    cidrBlock: 10.0.0.0/24
+    vpcIdRef:
+      name: my-vpc
+    mapPublicIpOnLaunch: true
